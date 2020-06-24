@@ -1,0 +1,13 @@
+{
+  "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.json"],
+  "compilerOptions": {
+    "resolveJsonModule": true,
+    "outDir": "lib",
+    "module": "commonjs",
+    "lib": ["ES2019"],
+    "target": "ES6",
+    "inlineSourceMap": true,
+    "strict": true,
+    "strictNullChecks": true
+  }
+}
