@@ -2,6 +2,12 @@
 
 A really bad ORM for TypeScript and PostgreSQL
 
+## Installation
+
+```
+npm install --save scuffed-orm
+```
+
 ## Usage
 Simple example:
 ```typescript
