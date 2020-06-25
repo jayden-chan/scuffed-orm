@@ -28,7 +28,7 @@ export default class PTSchema {
   }
 
   /**
-   * Add a table to the database
+   * Add a table to the schema
    *
    * @param {Table} table The table to add
    */
@@ -39,6 +39,15 @@ export default class PTSchema {
     }
 
     this.tables.add(table);
+  }
+
+  /**
+   * Add multiple tables to the schema
+   *
+   * @param {Table[]} tables The tables to add
+   */
+  addTables(tables: Table[]): void {
+    tables.forEach((t) => this.addTable(t));
   }
 
   /**
