@@ -5,7 +5,8 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
-    "build": "tsc --strict"
+    "build": "tsc",
+    "prepublish": "tsc"
   },
   "author": "Jayden Chan",
   "license": "MIT",
