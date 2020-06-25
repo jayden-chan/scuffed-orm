@@ -195,6 +195,10 @@ export default class PTSchema {
     const seenColumns = new Set();
     const seenFkeys = new Set();
 
+    if ([...this.tables].some((t) => t.title === table.title)) {
+      return `Table with name "${table.title}" already exists`;
+    }
+
     for (const { name } of table.columns) {
       if (seenColumns.has(name)) {
         return `Duplicate column "${name}" in table ${table.title}`;
@@ -204,7 +208,8 @@ export default class PTSchema {
     }
 
     for (const fKey of table.fKeys) {
-      if (!this.columnExists(table, fKey.localCol)) {
+      const localCol = table.columns.find((c) => c.name === fKey.localCol);
+      if (!localCol) {
         return `Local column "${fKey.localCol}" not found for table "${table.title}"`;
       }
 
@@ -214,17 +219,24 @@ export default class PTSchema {
 
       seenFkeys.add(fKey.localCol);
 
-      if (
-        ![...this.tables]
-          .filter((t) => t.title !== table.title)
-          .some((t) => {
-            return (
-              t.title === fKey.foreignTable &&
-              this.columnExists(t, fKey.foreignCol)
-            );
-          })
-      ) {
+      const foreignTable = [...this.tables]
+        .filter((t) => t.title !== table.title)
+        .find((t) => {
+          return (
+            t.title === fKey.foreignTable &&
+            this.columnExists(t, fKey.foreignCol)
+          );
+        });
+
+      if (!foreignTable) {
         return `No foreign table with title "${fKey.foreignTable}" and column "${fKey.foreignCol}" exists`;
+      }
+
+      if (
+        foreignTable.columns.find((c) => c.name === fKey.foreignCol)?.type !==
+        localCol.type
+      ) {
+        return `Column type mismatch on foreign key "${fKey.localCol}" in table "${table.title}"`;
       }
     }
 

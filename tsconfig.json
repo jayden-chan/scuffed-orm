@@ -4,7 +4,7 @@
     "resolveJsonModule": true,
     "outDir": "lib",
     "module": "commonjs",
-    "lib": ["ES2019"],
+    "lib": ["ES2019", "ES6"],
     "target": "ES6",
     "inlineSourceMap": true,
     "strict": true,
