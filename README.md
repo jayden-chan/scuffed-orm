@@ -5,7 +5,7 @@ A really bad ORM for TypeScript and PostgreSQL
 ## Installation
 
 ```
-npm install --save scuffed-orm
+npm install scuffed-orm
 ```
 
 ## Usage
@@ -20,7 +20,7 @@ schema.extension("pgcrypto");
 
 const CustomerType = Enum({
   name: "customer_type",
-  values: new Set(["hobby", "professional", "enterprise"]),
+  values: ["hobby", "professional", "enterprise"],
 });
 
 schema.addTable({
@@ -53,7 +53,7 @@ schema.addTable({
       nullable: false,
     },
   ],
-  pKeys: new Set(["name"]),
+  pKeys: ["name"],
   fKeys: [],
 });
 
