@@ -10,10 +10,10 @@ export type ForeignKey = {
 };
 
 export type Table = {
-  title: string;
+  name: string;
   typeName: string;
   columns: Column[];
-  pKeys: Set<string>;
+  pKeys: string[];
   fKeys: ForeignKey[];
 };
 
@@ -60,18 +60,12 @@ export const Boolean: BooleanType = {
   typeScriptName: "boolean",
 };
 
-export const Enum = ({
-  name,
-  values,
-}: {
-  name: string;
-  values: Set<string>;
-}) => {
+export const Enum = ({ name, values }: { name: string; values: string[] }) => {
   const ret: EnumType = {
     key: "UserDefinedType",
     sqlName: name,
     typeScriptName: toPascalCase(name),
-    values,
+    values: new Set(values),
   };
   return ret;
 };
