@@ -4,25 +4,35 @@ import { toPascalCase } from "./util";
 /********************************************************/
 
 export type ForeignKey = {
-  localCol: string;
-  foreignTable: string;
-  foreignCol: string;
+  table: string;
+  column: string;
 };
 
 export type Table = {
   name: string;
   typeName: string;
-  columns: Column[];
-  pKeys: string[];
-  fKeys: ForeignKey[];
+  columns: { [key: string]: Column };
+  primaryKeys: string[];
+  foreignKeys?: { [key: string]: ForeignKey };
 };
 
 export type Column = {
-  name: string;
   type: TSSQLType;
   nullable?: boolean;
-  default?: any;
+  default?: Default;
 };
+
+type DefaultValue = {
+  key: "value";
+  value: any;
+};
+
+type DefaultSQL = {
+  key: "sql";
+  value: string;
+};
+
+export type Default = DefaultValue | DefaultSQL;
 
 /********************************************************/
 /*                     Value Types                      */
