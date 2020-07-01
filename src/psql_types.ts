@@ -23,12 +23,12 @@ export type Column = {
 };
 
 type DefaultValue = {
-  key: "value";
+  type: "value";
   value: any;
 };
 
 type DefaultSQL = {
-  key: "sql";
+  type: "raw_sql";
   value: string;
 };
 

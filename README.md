@@ -12,11 +12,14 @@ npm install scuffed-orm
 Simple example:
 ```typescript
 import PTSchema from "scuffed-orm";
-import { Timestamp, SmallInt, Enum, Text } from "scuffed-orm";
+import { TSSQLTypes } from "scuffed-orm";
+
+const { Enum, SmallInt, Text, Timestamp, UUID } = TSSQLTypes;
 
 const schema = new PTSchema();
 
 schema.extension("pgcrypto");
+schema.extension("uuid-ossp");
 
 const CustomerType = Enum({
   name: "customer_type",
@@ -24,57 +27,60 @@ const CustomerType = Enum({
 });
 
 schema.addTable({
-  title: "customers",
+  name: "customers",
   typeName: "Customer",
-  columns: [
-    {
-      name: "name",
+  columns: {
+    id: {
+      type: UUID,
+      default: {
+        type: "raw_sql",
+        value: "UUID_GENERATE_V4()",
+      },
+    },
+    name: {
       type: Text,
-      nullable: false,
     },
-    {
-      name: "date_registered",
+    date_registered: {
       type: Timestamp,
-      nullable: false,
+      default: {
+        type: "raw_sql",
+        value: "NOW()",
+      },
     },
-    {
-      name: "type",
+    type: {
       type: CustomerType,
-      nullable: false,
     },
-    {
-      name: "email",
+    num_purchases: {
+      type: SmallInt,
+    },
+    email: {
       type: Text,
       nullable: true,
     },
-    {
-      name: "num_purchases",
-      type: SmallInt,
-      nullable: false,
-    },
-  ],
-  pKeys: ["name"],
-  fKeys: [],
+  },
+  primaryKeys: ["id"],
 });
 
-console.log(schema.generateSQL());
+console.log(schema.generateSQLSchema());
 console.log();
-console.log(schema.generateTypescript());
+console.log(schema.generateTypeScript());
 ```
 Would output the following SQL and TypeScript:
 ```sql
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TYPE customer_type AS ENUM ('hobby', 'professional', 'enterprise');
 
-CREATE TABLE customers (
+CREATE TABLE IF NOT EXISTS customers (
+  id UUID NOT NULL DEFAULT UUID_GENERATE_V4(),
   name TEXT NOT NULL,
-  date_registered TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+  date_registered TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
   type customer_type NOT NULL,
-  email TEXT,
   num_purchases SMALLINT NOT NULL,
+  email TEXT,
 
-  PRIMARY KEY (name)
+  PRIMARY KEY (id)
 );
 ```
 ```typescript
@@ -85,10 +91,11 @@ export enum CustomerType {
 }
 
 export type Customer = {
+  id: string;
   name: string;
   dateRegistered: string;
   type: CustomerType;
-  email: string;
   numPurchases: number;
+  email?: string;
 };
 ```

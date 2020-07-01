@@ -91,7 +91,7 @@ export default class PTSchema {
             const nullable = column.nullable ? "" : " NOT NULL";
 
             const defaultString = column.default
-              ? column.default.key === "value"
+              ? column.default.type === "value"
                 ? typeof column.default.value === "string"
                   ? ` DEFAULT "${column.default.value}"`
                   : ` DEFAULT ${column.default.value}`
@@ -166,9 +166,11 @@ export default class PTSchema {
 
         typeString += Object.entries(table.columns)
           .map(([name, column]) => {
-            return `${this.tsIndent()}${toCamelCase(name)}: ${
-              column.type.typeScriptName
-            };`;
+            const indent = this.tsIndent();
+            const fieldName = toCamelCase(name);
+            const typeName = column.type.typeScriptName;
+            const optional = column.nullable ? "?" : "";
+            return `${indent}${fieldName}${optional}: ${typeName};`;
           })
           .join("\n");
 
@@ -243,10 +245,7 @@ export default class PTSchema {
         const foreignTable = this.tables
           .filter((t) => t.name !== table.name)
           .find((t) => {
-            return (
-              t.name === key.table &&
-              this.columnExists(t, key.column)
-            );
+            return t.name === key.table && this.columnExists(t, key.column);
           });
 
         if (!foreignTable) {
