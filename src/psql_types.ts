@@ -20,68 +20,75 @@ export type Table = {
 export type Column = {
   name: string;
   type: TSSQLType;
-  nullable: boolean;
+  nullable?: boolean;
+  default?: any;
 };
 
 /********************************************************/
 /*                     Value Types                      */
 /********************************************************/
 
-export const SmallInt: SmallIntType = {
+export const UUID = {
+  key: "UUID",
+  sqlName: "UUID",
+  typeScriptName: "string",
+};
+
+export const SmallInt = {
   key: "SmallInt",
   sqlName: "SMALLINT",
   typeScriptName: "number",
 };
 
-export const Integer: IntegerType = {
+export const Integer = {
   key: "Integer",
   sqlName: "INTEGER",
   typeScriptName: "number",
 };
 
-export const BigInt: BigIntType = {
+export const BigInt = {
   key: "BigInt",
   sqlName: "BIGINT",
   typeScriptName: "BigInt",
 };
 
-export const Real: RealType = {
+export const Real = {
   key: "Real",
   sqlName: "REAL",
   typeScriptName: "number",
 };
 
-export const Double: DoubleType = {
+export const Double = {
   key: "Double",
   sqlName: "DOUBLE PRECISION",
   typeScriptName: "number",
 };
 
-export const SmallSerial: SmallSerialType = {
+export const SmallSerial = {
   key: "SmallSerial",
   sqlName: "SMALLSERIAL",
   typeScriptName: "number",
 };
 
-export const Serial: SerialType = {
+export const Serial = {
   key: "Serial",
   sqlName: "SERIAL",
   typeScriptName: "number",
 };
 
-export const BigSerial: BigSerialType = {
+export const BigSerial = {
   key: "BigSerial",
   sqlName: "BIGSERIAL",
   typeScriptName: "number",
 };
 
-export const Timestamp: TimestampType = {
+export const Timestamp = {
   key: "Timestamp",
   sqlName: "TIMESTAMP WITHOUT TIME ZONE",
   typeScriptName: "string",
 };
 
-export const Text: TextType = {
+export const Text = {
   key: "Text",
   sqlName: "TEXT",
   typeScriptName: "string",
@@ -96,7 +103,7 @@ export const VarChar: (length: number) => VarCharType = (length: number) => {
   };
 };
 
-export const Boolean: BooleanType = {
+export const Boolean = {
   key: "Boolean",
   sqlName: "BOOLEAN",
   typeScriptName: "boolean",
@@ -120,77 +127,11 @@ export type EnumType = UserDefinedType & {
   values: Set<string>;
 };
 
-export type SmallIntType = {
-  key: "SmallInt";
-  sqlName: "SMALLINT";
-  typeScriptName: "number";
-};
-
-export type IntegerType = {
-  key: "Integer";
-  sqlName: "INTEGER";
-  typeScriptName: "number";
-};
-
-export type BigIntType = {
-  key: "BigInt";
-  sqlName: "BIGINT";
-  typeScriptName: "BigInt";
-};
-
-export type RealType = {
-  key: "Real";
-  sqlName: "REAL";
-  typeScriptName: "number";
-};
-
-export type DoubleType = {
-  key: "Double";
-  sqlName: "DOUBLE PRECISION";
-  typeScriptName: "number";
-};
-
-export type SmallSerialType = {
-  key: "SmallSerial";
-  sqlName: "SMALLSERIAL";
-  typeScriptName: "number";
-};
-
-export type SerialType = {
-  key: "Serial";
-  sqlName: "SERIAL";
-  typeScriptName: "number";
-};
-
-export type BigSerialType = {
-  key: "BigSerial";
-  sqlName: "BIGSERIAL";
-  typeScriptName: "number";
-};
-
-export type TimestampType = {
-  key: "Timestamp";
-  sqlName: "TIMESTAMP WITHOUT TIME ZONE";
-  typeScriptName: "string";
-};
-
-export type TextType = {
-  key: "Text";
-  sqlName: "TEXT";
-  typeScriptName: "string";
-};
-
 export type VarCharType = {
   key: "VarChar";
   sqlName: "VARCHAR";
   typeScriptName: "string";
   length: number;
-};
-
-export type BooleanType = {
-  key: "Boolean";
-  sqlName: "BOOLEAN";
-  typeScriptName: "boolean";
 };
 
 export type UserDefinedType = {
@@ -200,16 +141,16 @@ export type UserDefinedType = {
 };
 
 export type TSSQLType =
-  | SmallIntType
-  | TimestampType
-  | TextType
   | VarCharType
-  | BooleanType
-  | IntegerType
-  | BigIntType
-  | RealType
-  | DoubleType
-  | SmallSerialType
-  | SerialType
-  | BigSerialType
-  | EnumType;
+  | EnumType
+  | typeof SmallInt
+  | typeof Timestamp
+  | typeof Text
+  | typeof Boolean
+  | typeof Integer
+  | typeof BigInt
+  | typeof Real
+  | typeof Double
+  | typeof SmallSerial
+  | typeof Serial
+  | typeof BigSerial;
