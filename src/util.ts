@@ -12,3 +12,7 @@ export function toCamelCase(toConvert: string): string {
     (_, firstLetter) => `${firstLetter.toUpperCase()}`
   );
 }
+
+export function pluralize(num: number): string {
+  return num === 1 ? "" : "s";
+}

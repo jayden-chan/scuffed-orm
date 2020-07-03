@@ -1,5 +1,5 @@
 import { EnumType, Table, TSSQLType } from "./psql_types";
-import { newlinePad, toPascalCase, toCamelCase } from "./util";
+import { newlinePad, toPascalCase, toCamelCase, pluralize } from "./util";
 
 type PTSchemaOptions = {
   typeScriptIndent: number;
@@ -39,9 +39,10 @@ export default class PTSchema {
     }
 
     table.primaryKeys = [...new Set(table.primaryKeys)];
-    const validationResult = this.validate(table);
-    if (validationResult) {
-      throw new Error(validationResult);
+    const validationErrors = this.validate(table);
+    if (validationErrors.length > 0) {
+      this.printValidationErrors(validationErrors, table.name);
+      throw new Error("Validation failed");
     }
 
     Object.entries(table.columns)
@@ -125,7 +126,9 @@ export default class PTSchema {
       .join("\n\n")
       .trim();
 
-    return `${newlinePad(extensions)}${newlinePad(typeDefs)}${tableDefs}`;
+    return `${this.sqlAutoGenNotice(true)}${newlinePad(extensions)}${newlinePad(
+      typeDefs
+    )}${tableDefs}${this.sqlAutoGenNotice(false)}`;
   }
 
   /**
@@ -180,7 +183,22 @@ export default class PTSchema {
       })
       .join("\n\n");
 
-    return `${newlinePad(customTypeDefs)}${tableTypeDefs}`;
+    return `${this.tsAutoGenNotice(true)}${newlinePad(
+      customTypeDefs
+    )}${tableTypeDefs}${this.tsAutoGenNotice(false)}`;
+  }
+
+  generateDropSQL(): string {
+    const dropTables = this.tables
+      .reverse()
+      .map((t) => `DROP TABLE IF EXISTS ${t.name};`)
+      .join("\n");
+
+    const dropTypes = Object.keys(this.customTypes)
+      .map((t) => `DROP TYPE IF EXISTS ${t};`)
+      .join("\n");
+
+    return `${dropTables}\n${dropTypes}`;
   }
 
   private genSQLType(customType: TSSQLType): string {
@@ -207,25 +225,28 @@ export default class PTSchema {
     throw new Error("Provided type is not a custom type");
   }
 
-  private validate(table: Table): string | undefined {
+  private validate(table: Table): string[] {
     const columns = new Set();
     const fKeys = new Set();
+    const errors = [];
 
     for (const name of Object.keys(table.columns)) {
       if (columns.has(name)) {
-        return `Duplicate column "${name}" in table ${table.name}`;
+        errors.push(`Duplicate column "${name}" in table ${table.name}`);
       }
 
       columns.add(name);
     }
 
     if (table.primaryKeys.length === 0) {
-      return `Table "${table.name}" must have a primary key`;
+      errors.push(`Table "${table.name}" must have a primary key`);
     }
 
     for (const key of table.primaryKeys) {
       if (!this.columnExists(table, key)) {
-        return `Table "${table.name}" is missing column "${key}" for primary key constraint`;
+        errors.push(
+          `Table "${table.name}" is missing column "${key}" for primary key constraint`
+        );
       }
     }
 
@@ -233,11 +254,17 @@ export default class PTSchema {
       for (const [col, key] of Object.entries(table.foreignKeys)) {
         const localCol = table.columns[col];
         if (!localCol) {
-          return `Local column "${col}" not found for table "${table.name}"`;
+          errors.push(
+            `Local column "${col}" not found for table "${table.name}"`
+          );
+          continue;
         }
 
         if (fKeys.has(col)) {
-          return `Duplicate foreign key "${col}" found in table "${table.name}"`;
+          errors.push(
+            `Duplicate foreign key "${col}" found in table "${table.name}"`
+          );
+          continue;
         }
 
         fKeys.add(col);
@@ -249,14 +276,21 @@ export default class PTSchema {
           });
 
         if (!foreignTable) {
-          return `No foreign table with title "${key.table}" and column "${key.column}" exists`;
+          errors.push(
+            `No foreign table with title "${key.table}" and column "${key.column}" exists`
+          );
+          continue;
         }
 
         if (foreignTable.columns[key.column]?.type !== localCol.type) {
-          return `Column type mismatch on foreign key "${col}" in table "${table.name}"`;
+          errors.push(
+            `Column type mismatch on foreign key "${col}" in table "${table.name}"`
+          );
         }
       }
     }
+
+    return errors;
   }
 
   private validateAll() {
@@ -268,11 +302,10 @@ export default class PTSchema {
 
       tables.add(table.name);
 
-      const validationError = this.validate(table);
-      if (validationError) {
-        throw new Error(
-          `Error while validating table ${table.name}:\n${validationError}\n`
-        );
+      const validationErrors = this.validate(table);
+      if (validationErrors.length > 0) {
+        this.printValidationErrors(validationErrors, table.name);
+        throw new Error(`Error while validating table ${table.name}`);
       }
     }
   }
@@ -287,5 +320,29 @@ export default class PTSchema {
 
   private sqlIndent(): string {
     return " ".repeat(this.options.sqlIndent);
+  }
+
+  private printValidationErrors(errors: string[], tableName: string): void {
+    console.error(
+      `${errors.length} error${pluralize(
+        errors.length
+      )} found for table "${tableName}":`
+    );
+
+    errors.forEach((e) => {
+      console.error(`    ${e}`);
+    });
+  }
+
+  private tsAutoGenNotice(begin: boolean): string {
+    return `${begin ? "" : "\n"}/*\n * ${
+      begin ? "BEGIN" : "END"
+    } AUTO GENERATED CONTENT BY scuffed-orm -- DO NOT EDIT\n */\n`;
+  }
+
+  private sqlAutoGenNotice(begin: boolean): string {
+    return `${begin ? "" : "\n"}--\n-- ${
+      begin ? "BEGIN" : "END"
+    } AUTO GENERATED CONTENT BY scuffed-orm -- DO NOT EDIT\n--\n`;
   }
 }
