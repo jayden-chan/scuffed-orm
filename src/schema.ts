@@ -219,11 +219,12 @@ export default class PTSchema {
 
   private genTypeScriptType(customType: TSSQLType): string {
     if ((customType as EnumType).values) {
-      return `export enum ${customType.typeScriptName} {\n${[
+      const typeString = `export type ${customType.typeScriptName} = ${[
         ...(customType as EnumType).values,
       ]
-        .map((v) => `${this.tsIndent()}${toPascalCase(v)},`)
-        .join("\n")}\n}`;
+        .map((v) => `"${v}"`)
+        .join(" | ")};`;
+      return typeString;
     }
 
     throw new Error("Provided type is not a custom type");
