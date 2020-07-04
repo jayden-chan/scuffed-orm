@@ -154,11 +154,11 @@ export default class PTSchema {
             return false;
           })
           .map((column) => {
-            seenTypes.add(column.type.key);
             return this.genTypeScriptType(column.type);
           })
           .join("\n\n");
       })
+      .filter((t) => t.length > 0)
       .join("\n\n")
       .trim();
 
@@ -198,7 +198,11 @@ export default class PTSchema {
       .map((t) => `DROP TYPE IF EXISTS ${t};`)
       .join("\n");
 
-    return `${dropTables}\n${dropTypes}`;
+    const dropExtensions = [...this.extensions]
+      .map((t) => `DROP EXTENSION IF EXISTS "${t}";`)
+      .join("\n");
+
+    return `${dropTables}\n${dropTypes}\n${dropExtensions}`;
   }
 
   private genSQLType(customType: TSSQLType): string {
