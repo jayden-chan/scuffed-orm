@@ -172,8 +172,8 @@ export default class PTSchema {
             const indent = this.tsIndent();
             const fieldName = toCamelCase(name);
             const typeName = column.type.typeScriptName;
-            const optional = column.nullable ? "?" : "";
-            return `${indent}${fieldName}${optional}: ${typeName};`;
+            const nullable = column.nullable ? " | null" : "";
+            return `${indent}${fieldName}: ${typeName}${nullable};`;
           })
           .join("\n");
 
