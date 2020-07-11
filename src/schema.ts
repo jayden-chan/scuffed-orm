@@ -226,7 +226,7 @@ export default class PTSchema {
       const arrayName = `${customType.typeScriptName}Values`;
       const valuesArray = `export const ${arrayName} = [${quotedValues.join(
         ", "
-      )}];`;
+      )}] as const;`;
       const valuesEnum = `export type ${customType.typeScriptName} = typeof ${arrayName}[number];`;
       return `${valuesArray}\n${valuesEnum}`;
     }
