@@ -3,9 +3,21 @@ import { toPascalCase } from "./util";
 /*                     Schema Types                     */
 /********************************************************/
 
+export type MutateAction =
+  | "NO ACTION"
+  | "RESTRICT"
+  | "CASCADE"
+  | "SET NULL"
+  | "SET DEFAULT";
+
 export type ForeignKey = {
+  columns: {
+    local: string;
+    foreign: string;
+  }[];
   table: string;
-  column: string;
+  onDelete?: MutateAction;
+  onUpdate?: MutateAction;
 };
 
 export type Table = {
@@ -13,7 +25,7 @@ export type Table = {
   typeName: string;
   columns: { [key: string]: Column };
   primaryKeys: string[];
-  foreignKeys?: { [key: string]: ForeignKey };
+  foreignKeys?: ForeignKey[];
 };
 
 export type Column = {
@@ -22,17 +34,22 @@ export type Column = {
   default?: Default;
 };
 
-type DefaultValue = {
-  type: "value";
-  value: any;
-};
+export type Default =
+  | {
+      type: "value";
+      value: any;
+    }
+  | {
+      type: "raw_sql";
+      value: string;
+    };
 
-type DefaultSQL = {
-  type: "raw_sql";
-  value: string;
+export type SchemaValidationErrors = {
+  errors: string[];
+  perTableErrors: {
+    [key: string]: string[];
+  };
 };
-
-export type Default = DefaultValue | DefaultSQL;
 
 /********************************************************/
 /*                     Value Types                      */

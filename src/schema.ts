@@ -1,4 +1,9 @@
-import { EnumType, Table, TSSQLType } from "./psql_types";
+import {
+  EnumType,
+  Table,
+  TSSQLType,
+  SchemaValidationErrors,
+} from "./psql_types";
 import { newlinePad, toPascalCase, toCamelCase, pluralize } from "./util";
 
 type PTSchemaOptions = {
@@ -34,17 +39,6 @@ export default class PTSchema {
    * @param {Table} table The table to add
    */
   addTable(table: Table): void {
-    if (this.tables.some((t) => t.name === table.name)) {
-      throw new Error(`Table with name "${table.name}" already exists`);
-    }
-
-    table.primaryKeys = [...new Set(table.primaryKeys)];
-    const validationErrors = this.validate(table);
-    if (validationErrors.length > 0) {
-      this.printValidationErrors(validationErrors, table.name);
-      throw new Error("Validation failed");
-    }
-
     Object.entries(table.columns)
       .filter(([, col]) => col.type.key === "UserDefinedType")
       .forEach(([, col]) => (this.customTypes[col.type.sqlName] = col.type));
@@ -66,8 +60,11 @@ export default class PTSchema {
    *
    * @return {string} The SQL schema
    */
-  generateSQLSchema(): string {
-    this.validateAll();
+  generateSQLSchema(): SchemaValidationErrors | string {
+    const errors = this.validate();
+    if (errors !== undefined) {
+      return errors;
+    }
 
     const extensions = [...this.extensions]
       .map((extension) => {
@@ -111,11 +108,17 @@ export default class PTSchema {
 
         if (table.foreignKeys && Object.keys(table.foreignKeys).length > 0) {
           tableString += `,\n`;
-          tableString += Object.entries(table.foreignKeys)
-            .map(([col, fKey]) => {
-              return `${this.sqlIndent()}FOREIGN KEY (${col}) REFERENCES ${
-                fKey.table
-              } (${fKey.column})`;
+          tableString += table.foreignKeys
+            .map((fKey) => {
+              return [
+                `${this.sqlIndent()}FOREIGN KEY`,
+                `(${fKey.columns.map(({ local }) => local).join(", ")})`,
+                "REFERENCES",
+                fKey.table,
+                `(${fKey.columns.map(({ foreign }) => foreign).join(", ")})`,
+                `ON DELETE ${fKey.onDelete ?? "NO ACTION"}`,
+                `ON UPDATE ${fKey.onUpdate ?? "NO ACTION"}`,
+              ].join(" ");
             })
             .join(",\n");
         }
@@ -136,8 +139,11 @@ export default class PTSchema {
    *
    * @return {string} The TypeScript types
    */
-  generateTypeScript(): string {
-    this.validateAll();
+  generateTypeScript(): SchemaValidationErrors | string {
+    const errors = this.validate();
+    if (errors !== undefined) {
+      return errors;
+    }
 
     const seenTypes = new Set();
     const customTypeDefs = this.tables
@@ -234,9 +240,8 @@ export default class PTSchema {
     throw new Error("Provided type is not a custom type");
   }
 
-  private validate(table: Table): string[] {
+  private validateTable(table: Table): string[] {
     const columns = new Set();
-    const fKeys = new Set();
     const errors = [];
 
     for (const name of Object.keys(table.columns)) {
@@ -260,63 +265,75 @@ export default class PTSchema {
     }
 
     if (table.foreignKeys) {
-      for (const [col, key] of Object.entries(table.foreignKeys)) {
-        const localCol = table.columns[col];
-        if (!localCol) {
-          errors.push(
-            `Local column "${col}" not found for table "${table.name}"`
-          );
-          continue;
-        }
+      const localColsSeen = new Set();
+      table.foreignKeys.forEach((fKey) => {
+        fKey.columns.forEach(({ local, foreign }) => {
+          const localCol = table.columns[local];
+          if (!localCol) {
+            errors.push(
+              `Local column "${local}" not found for table "${table.name}"`
+            );
+            return;
+          }
 
-        if (fKeys.has(col)) {
-          errors.push(
-            `Duplicate foreign key "${col}" found in table "${table.name}"`
-          );
-          continue;
-        }
+          if (localColsSeen.has(local)) {
+            errors.push(
+              `Column "${local}" in table "${table.name}" cannot appear in more than one foriegn key`
+            );
+            return;
+          }
+          localColsSeen.add(local);
 
-        fKeys.add(col);
+          const foreignTable = this.tables
+            .filter((t) => t.name !== table.name)
+            .find(
+              (t) => t.name === fKey.table && this.columnExists(t, foreign)
+            );
 
-        const foreignTable = this.tables
-          .filter((t) => t.name !== table.name)
-          .find((t) => {
-            return t.name === key.table && this.columnExists(t, key.column);
-          });
+          if (!foreignTable) {
+            errors.push(
+              `No foreign table with title "${fKey.table}" and column "${foreign}" exists`
+            );
+            return;
+          }
 
-        if (!foreignTable) {
-          errors.push(
-            `No foreign table with title "${key.table}" and column "${key.column}" exists`
-          );
-          continue;
-        }
-
-        if (foreignTable.columns[key.column]?.type !== localCol.type) {
-          errors.push(
-            `Column type mismatch on foreign key "${col}" in table "${table.name}"`
-          );
-        }
-      }
+          if (foreignTable.columns[foreign]?.type !== localCol.type) {
+            errors.push(
+              `Invalid foreign key constraint: type of column "${local}" in table "${table.name}" does not match type of column "${foreign}" in table "${foreignTable.name}"`
+            );
+          }
+        });
+      });
     }
 
     return errors;
   }
 
-  private validateAll() {
-    const tables = new Set();
-    for (const table of this.tables) {
-      if (tables.has(table.name)) {
-        throw new Error(`Table "${table.name}" already exists.`);
+  validate(): SchemaValidationErrors | undefined {
+    const seenTables = new Set();
+    const results: SchemaValidationErrors = {
+      errors: [],
+      perTableErrors: {},
+    };
+
+    this.tables.forEach((table) => {
+      if (seenTables.has(table.name)) {
+        results.errors.push(`Table "${table.name}" already exists.`);
+        return;
       }
 
-      tables.add(table.name);
+      seenTables.add(table.name);
 
-      const validationErrors = this.validate(table);
+      const validationErrors = this.validateTable(table);
       if (validationErrors.length > 0) {
-        this.printValidationErrors(validationErrors, table.name);
-        throw new Error(`Error while validating table ${table.name}`);
+        results.perTableErrors[table.name] = validationErrors;
       }
-    }
+    });
+
+    return results.errors.length > 0 ||
+      Object.keys(results.perTableErrors).length > 0
+      ? results
+      : undefined;
   }
 
   private columnExists(table: Table, name: string): boolean {
@@ -329,18 +346,6 @@ export default class PTSchema {
 
   private sqlIndent(): string {
     return " ".repeat(this.options.sqlIndent);
-  }
-
-  private printValidationErrors(errors: string[], tableName: string): void {
-    console.error(
-      `${errors.length} error${pluralize(
-        errors.length
-      )} found for table "${tableName}":`
-    );
-
-    errors.forEach((e) => {
-      console.error(`    ${e}`);
-    });
   }
 
   private tsAutoGenNotice(begin: boolean): string {
