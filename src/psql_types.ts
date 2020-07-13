@@ -26,6 +26,7 @@ export type Table = {
   columns: { [key: string]: Column };
   primaryKeys: string[];
   foreignKeys?: ForeignKey[];
+  constraints?: { [key: string]: string };
 };
 
 export type Column = {

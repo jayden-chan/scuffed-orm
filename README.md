@@ -1,6 +1,7 @@
 # Scuffed ORM
 
-A really bad ORM for TypeScript and PostgreSQL
+A really bad ORM for TypeScript and PostgreSQL. Actually this isn't even an ORM, it just
+generates SQL and TypeScript types from a schema. Too late to change the name now though
 
 ## Installation
 

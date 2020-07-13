@@ -106,8 +106,8 @@ export default class PTSchema {
           ].join(", ")})`;
         }
 
-        if (table.foreignKeys && Object.keys(table.foreignKeys).length > 0) {
-          tableString += `,\n`;
+        if (table.foreignKeys && table.foreignKeys.length > 0) {
+          tableString += ",\n";
           tableString += table.foreignKeys
             .map((fKey) => {
               return [
@@ -120,6 +120,16 @@ export default class PTSchema {
                 `ON UPDATE ${fKey.onUpdate ?? "NO ACTION"}`,
               ].join(" ");
             })
+            .join(",\n");
+        }
+
+        if (table.constraints && Object.keys(table.constraints).length > 0) {
+          tableString += ",\n";
+          tableString += Object.entries(table.constraints)
+            .map(
+              ([name, cons]) =>
+                `${this.sqlIndent()}CONSTRAINT ${name} CHECK ${cons}`
+            )
             .join(",\n");
         }
 
