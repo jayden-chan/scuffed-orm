@@ -4,6 +4,11 @@
   "description": "A really bad ORM for TypeScript and PostgreSQL",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "files": [
+    "lib/**/*.d.ts",
+    "lib/**/*.js",
+    "!lib/example*"
+  ],
   "scripts": {
     "build": "tsc",
     "prepublish": "tsc"
