@@ -79,7 +79,7 @@ export default class PTSchema {
 
     const tableDefs = this.tables
       .map((table) => {
-        let tableString = `CREATE TABLE IF NOT EXISTS ${table.name} `;
+        let tableString = `CREATE TABLE ${table.name} `;
 
         tableString += "(\n";
         tableString += Object.entries(table.columns)

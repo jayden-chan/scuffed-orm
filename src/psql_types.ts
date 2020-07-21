@@ -125,7 +125,7 @@ export const Text = {
 export const VarChar: (length: number) => VarCharType = (length: number) => {
   return {
     key: "VarChar",
-    sqlName: "VARCHAR",
+    sqlName: `VARCHAR(${length})`,
     typeScriptName: "string",
     length,
   };
@@ -157,7 +157,7 @@ export type EnumType = UserDefinedType & {
 
 export type VarCharType = {
   key: "VarChar";
-  sqlName: "VARCHAR";
+  sqlName: string;
   typeScriptName: "string";
   length: number;
 };
