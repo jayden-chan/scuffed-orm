@@ -110,14 +110,15 @@ export default class PTSchema {
           tableString += ",\n";
           tableString += table.foreignKeys
             .map((fKey) => {
+              const indent = this.sqlIndent();
               return [
-                `${this.sqlIndent()}FOREIGN KEY`,
+                `${indent}FOREIGN KEY`,
                 `(${fKey.columns.map(({ local }) => local).join(", ")})`,
                 "REFERENCES",
                 fKey.table,
-                `(${fKey.columns.map(({ foreign }) => foreign).join(", ")})`,
-                `ON DELETE ${fKey.onDelete ?? "NO ACTION"}`,
-                `ON UPDATE ${fKey.onUpdate ?? "NO ACTION"}`,
+                `(${fKey.columns.map(({ foreign }) => foreign).join(", ")})\n`,
+                `${indent} ON DELETE ${fKey.onDelete ?? "NO ACTION"}\n`,
+                `${indent} ON UPDATE ${fKey.onUpdate ?? "NO ACTION"}`,
               ].join(" ");
             })
             .join(",\n");
