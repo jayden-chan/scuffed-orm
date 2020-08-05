@@ -131,6 +131,15 @@ export const VarChar: (length: number) => VarCharType = (length: number) => {
   };
 };
 
+export const Char: (length: number) => CharType = (length: number) => {
+  return {
+    key: "Char",
+    sqlName: `CHAR(${length})`,
+    typeScriptName: "string",
+    length,
+  };
+};
+
 export const Boolean = {
   key: "Boolean",
   sqlName: "BOOLEAN",
@@ -162,6 +171,13 @@ export type VarCharType = {
   length: number;
 };
 
+export type CharType = {
+  key: "Char";
+  sqlName: string;
+  typeScriptName: "string";
+  length: number;
+};
+
 export type UserDefinedType = {
   key: "UserDefinedType";
   sqlName: string;
@@ -170,6 +186,7 @@ export type UserDefinedType = {
 
 export type TSSQLType =
   | VarCharType
+  | CharType
   | EnumType
   | typeof SmallInt
   | typeof Timestamp

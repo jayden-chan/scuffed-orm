@@ -4,7 +4,8 @@ import {
   TSSQLType,
   SchemaValidationErrors,
 } from "./psql_types";
-import { newlinePad, toPascalCase, toCamelCase, pluralize } from "./util";
+import { newlinePad, toCamelCase } from "./util";
+import { deepStrictEqual } from "assert";
 
 type PTSchemaOptions = {
   typeScriptIndent: number;
@@ -308,10 +309,20 @@ export default class PTSchema {
             return;
           }
 
-          if (foreignTable.columns[foreign]?.type !== localCol.type) {
-            errors.push(
-              `Invalid foreign key constraint: type of column "${local}" in table "${table.name}" does not match type of column "${foreign}" in table "${foreignTable.name}"`
-            );
+          try {
+            deepStrictEqual(foreignTable.columns[foreign]?.type, localCol.type);
+          } catch {
+            const error =
+              "Invalid foreign key constraint: type of column" +
+              local +
+              " in table " +
+              table.name +
+              " does not match type of column " +
+              foreign +
+              " in table " +
+              foreignTable.name;
+
+            errors.push(error);
           }
         });
       });
