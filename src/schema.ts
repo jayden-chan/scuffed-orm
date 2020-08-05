@@ -207,7 +207,7 @@ export default class PTSchema {
   }
 
   generateDropSQL(): string {
-    const dropTables = this.tables
+    const dropTables = [...this.tables]
       .reverse()
       .map((t) => `DROP TABLE IF EXISTS ${t.name};`)
       .join("\n");
